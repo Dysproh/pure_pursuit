@@ -22,7 +22,7 @@ where
 {
     points: Vec<Waypoint<T, D>>,
     radius: T,
-    current_segment: Option<usize>,
+    pub current_segment: Option<usize>,
 }
 
 impl<T, const D: usize> PathBuilder<T, NoRadius, D>
@@ -82,7 +82,7 @@ where
 
     /// Gets the next point to follow and updates what segment it is on currently if necessary
     /// position: A waypoint containing the current position of the robot along the same coordinate system
-    pub(crate) fn step(&mut self, position: Waypoint<T, D>) -> Waypoint<T, D> {
+    pub fn step(&mut self, position: Waypoint<T, D>) -> Waypoint<T, D> {
         match self.current_segment {
             None => {
                 // If its within the lookahead radius of the starting point, start pathfinding
@@ -162,7 +162,7 @@ where
                     let rt: [T; D] = p
                         .dimensions
                         .zip(q.dimensions)
-                        .map(|(pn, qn)| pn + t * (pn + qn));
+                        .map(|(pn, qn)| pn + t * (qn - pn));
                     Waypoint { dimensions: rt }
                 } // else {
             } // Some(x) => {

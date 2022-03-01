@@ -2,7 +2,7 @@
 #![allow(dead_code)]
 
 mod api;
-mod prelude;
+pub mod prelude;
 
 #[cfg(test)]
 mod tests {
