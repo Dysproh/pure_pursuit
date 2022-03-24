@@ -13,6 +13,7 @@ libm = "0.2.2"
 [dependencies.num]
 version = "0.4.0"
 default-features = false
+features = ["libm"]
 
 [dev-dependencies]
 libc-print = "0.1.17"
