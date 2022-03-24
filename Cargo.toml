@@ -1,6 +1,6 @@
 [package]
 name = "pure_pursuit"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
 description = "An implementation of generic Pure Pursuit in no_std Rust"
 license = "GPL-3.0-or-later"
@@ -10,7 +10,6 @@ license = "GPL-3.0-or-later"
 [dependencies]
 libm = "0.2.2"
 num = "0.4.0"
-array-concat = "0.5.1"
 
 [dev-dependencies]
 libc-print = "0.1.17"

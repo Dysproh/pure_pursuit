@@ -3,12 +3,6 @@
 version = 3
 
 [[package]]
-name = "array-concat"
-version = "0.5.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7ae7fbe44301f50fc4b1e58131a0a71e40fd4c48c7231e2dc05b595145a29134"
-
-[[package]]
 name = "autocfg"
 version = "1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -113,9 +107,8 @@ dependencies = [
 
 [[package]]
 name = "pure_pursuit"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
- "array-concat",
  "libc-print",
  "libm",
  "num",
