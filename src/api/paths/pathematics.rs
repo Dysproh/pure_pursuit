@@ -7,30 +7,30 @@ impl<T> RadiusState for Radius<T> {}
 impl RadiusState for NoRadius {}
 
 #[derive(Debug)]
-pub struct PathBuilder<T, E: RadiusState, const D: usize>
+pub struct PathBuilder<T, E: RadiusState, const D: usize, const L: usize>
 where
     T: num::Float + num::FromPrimitive + core::iter::Sum,
 {
     radius: E,
-    points: Vec<Waypoint<T, D>>,
+    points: [Waypoint<T, D>; L],
 }
 
 #[derive(Debug)]
-pub struct Pathematics<T, const D: usize>
+pub struct Pathematics<T, const D: usize, const L: usize>
 where
     T: num::Float + num::FromPrimitive + core::iter::Sum,
 {
-    points: Vec<Waypoint<T, D>>,
+    points: [Waypoint<T, D>; L],
     radius: T,
     pub current_segment: Option<usize>,
 }
 
-impl<T, const D: usize> PathBuilder<T, NoRadius, D>
+impl<T, const D: usize, const L: usize> PathBuilder<T, NoRadius, D, L>
 where
     T: num::Float + core::iter::Sum + num::FromPrimitive,
 {
     /// Consumes the builder and returns it with a radius added
-    pub fn with_radius(self, r: T) -> PathBuilder<T, Radius<T>, D> {
+    pub fn with_radius(self, r: T) -> PathBuilder<T, Radius<T>, D, L> {
         PathBuilder {
             radius: Radius(r),
             points: self.points,
@@ -38,12 +38,12 @@ where
     }
 }
 
-impl<T, const D: usize> PathBuilder<T, Radius<T>, D>
+impl<T, const D: usize, const L: usize> PathBuilder<T, Radius<T>, D, L>
 where
     T: num::Float + core::iter::Sum + num::FromPrimitive,
 {
     /// Consumes the builder and returns a Pathematics struct
-    pub fn build(self) -> Pathematics<T, D> {
+    pub fn build(self) -> Pathematics<T, D, L> {
         Pathematics {
             radius: self.radius.0,
             current_segment: None,
@@ -59,27 +59,27 @@ where
     }
 }
 
-impl<T, E: RadiusState, const D: usize> PathBuilder<T, E, D>
+impl<T, E: RadiusState, const D: usize, const L: usize> PathBuilder<T, E, D, L>
 where
     T: num::Float + core::iter::Sum + num::FromPrimitive,
 {
-    pub fn with_point(mut self, point: Waypoint<T, D>) -> Self {
-        self.points.push(point);
-        self
+    pub fn with_point(self, point: Waypoint<T, D>) -> PathBuilder<T, E, D, { L + 1 }> {
+        let mut evil_point_concatenated: [Waypoint<T, D>; L + 1] = [Waypoint::default(); L+1];
+        for i in 0..L {
+            evil_point_concatenated[i] = self.points[i];
+        }
+        evil_point_concatenated[L] = point;
+        PathBuilder {
+            points: evil_point_concatenated,
+            radius: self.radius,
+        }
     }
 }
 
-impl<T, const D: usize> Pathematics<T, D>
-where
-    T: num::Float + core::iter::Sum + num::FromPrimitive,
+impl<T, const D: usize, const L: usize> Pathematics<T, D, L>
+    where
+        T: num::Float + core::iter::Sum + num::FromPrimitive,
 {
-    pub fn builder() -> PathBuilder<T, NoRadius, D> {
-        PathBuilder {
-            radius: NoRadius,
-            points: Vec::new(),
-        }
-    }
-
     /// Gets the next point to follow and updates what segment it is on currently if necessary
     /// position: A waypoint containing the current position of the robot along the same coordinate system
     pub fn step(&mut self, position: Waypoint<T, D>) -> Waypoint<T, D> {
@@ -168,4 +168,11 @@ where
             } // Some(x) => {
         } // match self.current_segment {
     } // fn step(&mut self, position: Waypoint<T, D>) -> Waypoint<T, D> {
+}
+
+pub fn path_builder<T: num::Float + num::FromPrimitive + core::iter::Sum, const D: usize>() -> PathBuilder<T, NoRadius, D, 0> {
+    PathBuilder {
+        radius: NoRadius,
+        points: [],
+    }
 }
