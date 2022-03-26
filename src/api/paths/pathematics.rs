@@ -1,3 +1,5 @@
+//! The Pathematics struct and its builder
+
 use crate::api::paths::Waypoint;
 
 pub trait RadiusState {}
@@ -6,6 +8,28 @@ pub struct NoRadius;
 impl<T> RadiusState for Radius<T> {}
 impl RadiusState for NoRadius {}
 
+
+/// The builder for the Pathematics struct
+///
+/// This builder is generic over 4 parameters:
+/// - A `num::Float` type which is used to store the point values, usually an f64 or similar type
+/// - A typestate which, at compile time, ensures the resulting Pathematics struct has a radius assigned
+/// - A dimension number, which is passed onto the Pathematics and eventually to the Waypoints, which determines
+///     how many dimensions the controller runs in (i.e. 2D, 3D, etc.)
+/// - A length number, which increases with each added waypoint. This is primarily here so that we can know the
+///     size at compile time and avoid heap allocation. This ***must*** be 0 when the builder is constructed
+///
+/// Example using a PathBuilder to create a 2D path with f64s:
+/// ```
+/// let path = path_builder::<f64, 2>()
+///             .with_radius(3f64)
+///             .with_point(Waypoint {
+///                 dimensions: [2f64, 1f64],
+///             })
+///             .with_point(Waypoint {
+///                 dimensions: [5f64, 8f64],
+///             }).build();
+/// ```
 #[derive(Debug)]
 pub struct PathBuilder<T, E: RadiusState, const D: usize, const L: usize>
 where
@@ -15,6 +39,10 @@ where
     points: [Waypoint<T, D>; L],
 }
 
+/// The Pure Pursuit calculation structure
+///
+/// This struct is constructed with a PathBuilder and uses the given path and pursuit radius to find
+/// the optimal point to pursue. It should not be constructed directly.
 #[derive(Debug)]
 pub struct Pathematics<T, const D: usize, const L: usize>
 where
@@ -22,6 +50,7 @@ where
 {
     points: [Waypoint<T, D>; L],
     radius: T,
+    /// The current segment being used to pursue. Will automatically update as needed.
     pub current_segment: Option<usize>,
 }
 
@@ -30,6 +59,14 @@ where
     T: num::Float + core::iter::Sum + num::FromPrimitive,
 {
     /// Consumes the builder and returns it with a radius added
+    ///
+    /// This function MUST be used in order to get a builder which can be turned into a Pathematics
+    /// struct. Failure to do this will result in a compile time error (which is better than a runtime error).
+    ///
+    /// Example:
+    /// ```
+    /// let pathbuilder = path_builder::<f64, 2>().with_radius(3f64);
+    /// ```
     pub fn with_radius(self, r: T) -> PathBuilder<T, Radius<T>, D, L> {
         PathBuilder {
             radius: Radius(r),
@@ -63,6 +100,15 @@ impl<T, E: RadiusState, const D: usize, const L: usize> PathBuilder<T, E, D, L>
 where
     T: num::Float + core::iter::Sum + num::FromPrimitive,
 {
+    /// Consumes the builder and returns it with the point passed added
+    ///
+    /// Don't forget to set the radius too!
+    ///
+    /// Example:
+    /// ```
+    /// use pure_pursuit::prelude::Waypoint;
+    /// let pathbuilder = path_builder::<f64, 2>().with_point(Waypoint {dimensions: [20f64, 3f64]});
+    /// ```
     pub fn with_point(self, point: Waypoint<T, D>) -> PathBuilder<T, E, D, { L + 1 }> {
         let mut evil_point_concatenated: [Waypoint<T, D>; L + 1] = [Waypoint::default(); L+1];
         for i in 0..L {
@@ -152,12 +198,8 @@ impl<T, const D: usize, const L: usize> Pathematics<T, D, L>
 
                     // Find the greatest potential value for t
                     // which will be the intersection closer to the destination point of the current segment
-                    let t: T = T::max(
-                        (-b + (b.powi(2) - T::from_i8(4).unwrap() * a * c).sqrt())
-                            / (T::from_i8(2).unwrap() * a),
-                        (-b - (b.powi(2) - T::from_i8(4).unwrap() * a * c).sqrt())
-                            / (T::from_i8(2).unwrap() * a),
-                    );
+                    let t: T = (-b + (b.powi(2) - T::from_i8(4).unwrap() * a * c).sqrt())
+                            / (T::from_i8(2).unwrap() * a);
 
                     let rt: [T; D] = p
                         .dimensions
@@ -170,6 +212,24 @@ impl<T, const D: usize, const L: usize> Pathematics<T, D, L>
     } // fn step(&mut self, position: Waypoint<T, D>) -> Waypoint<T, D> {
 }
 
+/// Create a builder for the Pathematics struct
+///
+/// This function is generic over 2 parameters:
+/// - A `num::Float` type which is used to store the point values, usually an f64 or similar type
+/// - A dimension number, which is passed onto the Pathematics and eventually to the Waypoints, which determines
+///     how many dimensions the controller runs in (i.e. 2D, 3D, etc.)
+///
+/// Example using a PathBuilder to create a 2D path with f64s:
+/// ```
+/// let path = path_builder::<f64, 2>()
+///             .with_radius(3f64)
+///             .with_point(Waypoint {
+///                 dimensions: [2f64, 1f64],
+///             })
+///             .with_point(Waypoint {
+///                 dimensions: [5f64, 8f64],
+///             }).build();
+/// ```
 pub fn path_builder<T: num::Float + num::FromPrimitive + core::iter::Sum, const D: usize>() -> PathBuilder<T, NoRadius, D, 0> {
     PathBuilder {
         radius: NoRadius,

@@ -1,7 +1,13 @@
 #![feature(array_zip)]
 #![feature(generic_const_exprs)]
 #![allow(dead_code)]
+#![allow(incomplete_features)]
 #![no_std]
+#![deny(missing_docs)]
+
+//! # Rust Pure Pursuit Controller ![https://crates.io/crates/pure_pursuit](https://img.shields.io/crates/v/pure_pursuit)
+// A no_std Pure Pursuit controller intended for Vex robots, but designed to be as versatile as possible.
+
 mod api;
 pub mod prelude;
 
