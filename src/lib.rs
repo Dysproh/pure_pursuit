@@ -13,11 +13,11 @@ pub mod prelude;
 
 #[cfg(test)]
 mod tests {
-    use crate::prelude::{PathBuilder, Pathematics, Waypoint, path_builder};
+    use crate::prelude::{PathBuilder, Pathematics, Waypoint};
 
     #[test]
     fn pathematics_builder() {
-        let path_builder = path_builder::<f64, 2>()
+        let path_builder = Pathematics::<f64, 2>::builder()
             .with_radius(3f64)
             .with_point(Waypoint {
                 dimensions: [0f64, 0f64],
@@ -32,7 +32,7 @@ mod tests {
 
     #[test]
     fn pathematics_struct() {
-        let path = path_builder::<f64, 2>()
+        let path = Pathematics::<f64, 2>::builder()
             .with_radius(3f64)
             .with_point(Waypoint {
                 dimensions: [0f64, 0f64],
@@ -49,7 +49,7 @@ mod tests {
     // This test ensures that if the position of the robot is not on the path it will go straight to the start
     #[test]
     fn pathematics_test_start_out_of_range() {
-        let mut path = path_builder::<f64, 2>()
+        let mut path = Pathematics::<f64, 2>::builder()
             .with_radius(1f64)
             .with_point(Waypoint {
                 dimensions: [0f64, 0f64],
@@ -82,7 +82,7 @@ mod tests {
     // This test ensures that if the robot starts within the radius of the path it will target the path
     #[test]
     fn pathematics_test_start_in_range() {
-        let mut path = path_builder::<f64, 2>()
+        let mut path = Pathematics::<f64, 2>::builder()
             .with_radius(2f64)
             .with_point(Waypoint {
                 dimensions: [0f64, 0f64],

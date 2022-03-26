@@ -21,7 +21,7 @@ impl RadiusState for NoRadius {}
 ///
 /// Example using a PathBuilder to create a 2D path with f64s:
 /// ```
-/// let path = path_builder::<f64, 2>()
+/// let path = Pathematics::<f64, 2>::builder()
 ///             .with_radius(3f64)
 ///             .with_point(Waypoint {
 ///                 dimensions: [2f64, 1f64],
@@ -44,7 +44,7 @@ where
 /// This struct is constructed with a PathBuilder and uses the given path and pursuit radius to find
 /// the optimal point to pursue. It should not be constructed directly.
 #[derive(Debug)]
-pub struct Pathematics<T, const D: usize, const L: usize>
+pub struct Pathematics<T, const D: usize, const L: usize = 0>
 where
     T: num::Float + num::FromPrimitive + core::iter::Sum,
 {
@@ -230,9 +230,41 @@ impl<T, const D: usize, const L: usize> Pathematics<T, D, L>
 ///                 dimensions: [5f64, 8f64],
 ///             }).build();
 /// ```
+#[deprecated(since="0.1.4", note="Please use Pathematics::<T,D>::builder()")]
 pub fn path_builder<T: num::Float + num::FromPrimitive + core::iter::Sum, const D: usize>() -> PathBuilder<T, NoRadius, D, 0> {
     PathBuilder {
         radius: NoRadius,
         points: [],
+    }
+}
+
+impl<T, const D: usize> Pathematics<T, D, 0>
+    where
+        T: num::Float + core::iter::Sum + num::FromPrimitive,
+{
+    /// Create a builder for the Pathematics struct
+    ///
+    /// This function is generic over 2 parameters:
+    /// - A `num::Float` type which is used to store the point values, usually an f64 or similar type
+    /// - A dimension number, which is passed onto the Pathematics and eventually to the Waypoints, which determines
+    ///     how many dimensions the controller runs in (i.e. 2D, 3D, etc.)
+    ///
+    /// Example using a PathBuilder to create a 2D path with f64s:
+    /// ```
+    /// use pure_pursuit::prelude::*;
+    /// let path = Pathematics::<f64, 2>::builder()
+    ///             .with_radius(3f64)
+    ///             .with_point(Waypoint {
+    ///                 dimensions: [2f64, 1f64],
+    ///             })
+    ///             .with_point(Waypoint {
+    ///                 dimensions: [5f64, 8f64],
+    ///             }).build();
+    /// ```
+    pub fn builder() -> PathBuilder<T, NoRadius, D, 0> {
+        PathBuilder {
+            radius: NoRadius,
+            points: [],
+        }
     }
 }
