@@ -1,6 +1,7 @@
 //! The Pathematics struct and its builder
 
 use crate::api::paths::Waypoint;
+use crate::prelude::PathTargetFinder;
 
 pub trait RadiusState {}
 pub struct Radius<T>(T);
@@ -31,7 +32,7 @@ impl RadiusState for NoRadius {}
 ///             }).build();
 /// ```
 #[derive(Debug)]
-pub struct PathBuilder<T, E: RadiusState, const D: usize, const L: usize>
+pub struct StaticPathBuilder<T, E: RadiusState, const D: usize, const L: usize>
 where
     T: num::Float + num::FromPrimitive + core::iter::Sum,
 {
@@ -44,7 +45,7 @@ where
 /// This struct is constructed with a PathBuilder and uses the given path and pursuit radius to find
 /// the optimal point to pursue. It should not be constructed directly.
 #[derive(Debug)]
-pub struct Pathematics<T, const D: usize, const L: usize = 0>
+pub struct StaticPursuer<T, const D: usize, const L: usize = 0>
 where
     T: num::Float + num::FromPrimitive + core::iter::Sum,
 {
@@ -54,7 +55,7 @@ where
     pub current_segment: Option<usize>,
 }
 
-impl<T, const D: usize, const L: usize> PathBuilder<T, NoRadius, D, L>
+impl<T, const D: usize, const L: usize> StaticPathBuilder<T, NoRadius, D, L>
 where
     T: num::Float + core::iter::Sum + num::FromPrimitive,
 {
@@ -67,21 +68,21 @@ where
     /// ```
     /// let pathbuilder = path_builder::<f64, 2>().with_radius(3f64);
     /// ```
-    pub fn with_radius(self, r: T) -> PathBuilder<T, Radius<T>, D, L> {
-        PathBuilder {
+    pub fn with_radius(self, r: T) -> StaticPathBuilder<T, Radius<T>, D, L> {
+        StaticPathBuilder {
             radius: Radius(r),
             points: self.points,
         }
     }
 }
 
-impl<T, const D: usize, const L: usize> PathBuilder<T, Radius<T>, D, L>
+impl<T, const D: usize, const L: usize> StaticPathBuilder<T, Radius<T>, D, L>
 where
     T: num::Float + core::iter::Sum + num::FromPrimitive,
 {
     /// Consumes the builder and returns a Pathematics struct
-    pub fn build(self) -> Pathematics<T, D, L> {
-        Pathematics {
+    pub fn build(self) -> StaticPursuer<T, D, L> {
+        StaticPursuer {
             radius: self.radius.0,
             current_segment: None,
             points: self.points,
@@ -96,7 +97,7 @@ where
     }
 }
 
-impl<T, E: RadiusState, const D: usize, const L: usize> PathBuilder<T, E, D, L>
+impl<T, E: RadiusState, const D: usize, const L: usize> StaticPathBuilder<T, E, D, L>
 where
     T: num::Float + core::iter::Sum + num::FromPrimitive,
 {
@@ -109,20 +110,20 @@ where
     /// use pure_pursuit::prelude::Waypoint;
     /// let pathbuilder = path_builder::<f64, 2>().with_point(Waypoint {dimensions: [20f64, 3f64]});
     /// ```
-    pub fn with_point(self, point: Waypoint<T, D>) -> PathBuilder<T, E, D, { L + 1 }> {
+    pub fn with_point(self, point: Waypoint<T, D>) -> StaticPathBuilder<T, E, D, { L + 1 }> {
         let mut evil_point_concatenated: [Waypoint<T, D>; L + 1] = [Waypoint::default(); L+1];
         for i in 0..L {
             evil_point_concatenated[i] = self.points[i];
         }
         evil_point_concatenated[L] = point;
-        PathBuilder {
+        StaticPathBuilder {
             points: evil_point_concatenated,
             radius: self.radius,
         }
     }
 }
 
-impl<T, const D: usize, const L: usize> Pathematics<T, D, L>
+impl<T, const D: usize, const L: usize> StaticPursuer<T, D, L>
     where
         T: num::Float + core::iter::Sum + num::FromPrimitive,
 {
@@ -212,6 +213,13 @@ impl<T, const D: usize, const L: usize> Pathematics<T, D, L>
     } // fn step(&mut self, position: Waypoint<T, D>) -> Waypoint<T, D> {
 }
 
+impl<T, const D: usize, const L: usize> PathTargetFinder<T, D> for StaticPursuer<T, D, L>
+    where T: num::Float + num::FromPrimitive + core::iter::Sum{
+    fn get_target_point(&mut self, position: Waypoint<T, D>) -> Waypoint<T, D> {
+        self.step(position)
+    }
+}
+
 /// Create a builder for the Pathematics struct
 ///
 /// This function is generic over 2 parameters:
@@ -231,14 +239,14 @@ impl<T, const D: usize, const L: usize> Pathematics<T, D, L>
 ///             }).build();
 /// ```
 #[deprecated(since="0.1.4", note="Please use Pathematics::<T,D>::builder()")]
-pub fn path_builder<T: num::Float + num::FromPrimitive + core::iter::Sum, const D: usize>() -> PathBuilder<T, NoRadius, D, 0> {
-    PathBuilder {
+pub fn path_builder<T: num::Float + num::FromPrimitive + core::iter::Sum, const D: usize>() -> StaticPathBuilder<T, NoRadius, D, 0> {
+    StaticPathBuilder {
         radius: NoRadius,
         points: [],
     }
 }
 
-impl<T, const D: usize> Pathematics<T, D, 0>
+impl<T, const D: usize> StaticPursuer<T, D, 0>
     where
         T: num::Float + core::iter::Sum + num::FromPrimitive,
 {
@@ -252,7 +260,7 @@ impl<T, const D: usize> Pathematics<T, D, 0>
     /// Example using a PathBuilder to create a 2D path with f64s:
     /// ```
     /// use pure_pursuit::prelude::*;
-    /// let path = Pathematics::<f64, 2>::builder()
+    /// let path = StaticPursuer::<f64, 2>::builder()
     ///             .with_radius(3f64)
     ///             .with_point(Waypoint {
     ///                 dimensions: [2f64, 1f64],
@@ -261,8 +269,8 @@ impl<T, const D: usize> Pathematics<T, D, 0>
     ///                 dimensions: [5f64, 8f64],
     ///             }).build();
     /// ```
-    pub fn builder() -> PathBuilder<T, NoRadius, D, 0> {
-        PathBuilder {
+    pub fn builder() -> StaticPathBuilder<T, NoRadius, D, 0> {
+        StaticPathBuilder {
             radius: NoRadius,
             points: [],
         }

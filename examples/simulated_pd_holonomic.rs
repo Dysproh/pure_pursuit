@@ -27,10 +27,10 @@ fn main() {
         dimensions: [0f64, 0f64]
     };
 
-    let mut target: Waypoint<f64, 2> = path.step(robot_position);
+    let mut target: Waypoint<f64, 2> = path.get_target_point(robot_position);
 
     while robot_position.pythag(&target) > 0.1 {
-        target = path.step(robot_position);
+        target = path.get_target_point(robot_position);
         robot_position = Waypoint {
             dimensions: [
                 robot_position.dimensions[0] +
